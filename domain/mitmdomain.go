@@ -2,7 +2,7 @@ package domain
 
 import (
 	"fmt"
-	"strings"
+	"net"
 	"strconv"
 )
 
@@ -31,16 +31,15 @@ func (d *MitmDomain) GetInfo(handle string) *MitmInfo {
 		return nil
 	}
 
-	info := strings.Split(address, ":")
-	if len(info) != 2 {
+	addr, portString, err := net.SplitHostPort(address)
+	if err != nil {
 		return nil
 	}
 
-	addr := info[0]
 	if addr == "" {
 		return nil
 	}
-	port, err := strconv.ParseInt(info[1], 10, 32)
+	port, err := strconv.ParseInt(portString, 10, 32)
 	if err != nil || port < 1 || port > 65535 {
 		return nil
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -16,6 +17,7 @@ import (
 	"github.com/libretro/netplay-lobby-server-go/model"
 	"github.com/libretro/netplay-lobby-server-go/model/entity"
 	"github.com/libretro/netplay-lobby-server-go/model/repository"
+	"github.com/libretro/netplay-lobby-server-go/traversal"
 )
 
 func main() {
@@ -69,6 +71,31 @@ func main() {
 	server.Use(middleware.BodyLimit("64K"))
 
 	// Set the routes and prerender templates
+	traversalEnabled := config.Traversal.Address != ""
+	if traversalEnabled {
+		if config.Traversal.AdvertiseHost == "" || config.Traversal.PublicPort < 1 || config.Traversal.PublicPort > 65535 {
+			server.Logger.Fatal("Traversal requires advertisehost and publicport (1..65535)")
+		}
+		listener, err := net.Listen("tcp", config.Traversal.Address)
+		if err != nil {
+			server.Logger.Fatalf("Can't start traversal listener: %v", err)
+		}
+		defer listener.Close()
+		go func() {
+			if err := traversal.Serve(listener); err != nil {
+				server.Logger.Errorf("Traversal listener stopped: %v", err)
+			}
+		}()
+	}
+	server.GET("/traversal", func(c echo.Context) error {
+		c.Response().Header().Set("Cache-Control", "no-store")
+		return c.JSON(200, map[string]interface{}{
+			"enabled":  traversalEnabled,
+			"protocol": "tcp-v1",
+			"host":     config.Traversal.AdvertiseHost,
+			"port":     config.Traversal.PublicPort,
+		})
+	})
 	sessionCotroller.RegisterRoutes(server)
 	templatePath := fmt.Sprintf("%s/*.html", config.Server.TemplatePath)
 	if err = sessionCotroller.PrerenderTemplates(server, templatePath); err != nil {

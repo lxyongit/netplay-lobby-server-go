@@ -6,6 +6,15 @@ type Config struct {
 	Database  DatabaseConfig
 	Relay     map[string]string
 	Blacklist BlacklistConfig
+	Traversal TraversalConfig
+}
+
+// Empty Address disables traversal. AdvertiseHost must resolve directly to the
+// TCP listener (no HTTP/CDN proxy). PublicPort permits an explicit port mapping.
+type TraversalConfig struct {
+	Address       string
+	AdvertiseHost string
+	PublicPort    int
 }
 
 // ServerConfig holds the basic server config.

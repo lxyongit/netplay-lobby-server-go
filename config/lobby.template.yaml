@@ -10,7 +10,14 @@ database:
   connection: ":memory:"
 
 relay:
-  nyc: "example.relay.com"
+  nyc: "example.relay.com:55435"
+
+# Optional LibretroDroid TCP rendezvous. Enable only after opening this TCP port.
+# advertisehost must bypass HTTP proxies/CDNs and reach this listener directly.
+traversal:
+  address: "" # set to "[::]:55436" to enable IPv4 + IPv6
+  advertisehost: "" # e.g. direct.example.com (A and preferably AAAA records)
+  publicport: 55436
 
 blacklist:
   nickname:
