@@ -7,6 +7,8 @@ Netplay lobby server written in GO. Needs Go v1.13.
 ```bash
 go build
 ./netplay-lobby-server-go
+
+ systemctl restart netplay-lobby
 ```
 
 ## Configuration
