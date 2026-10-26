@@ -36,6 +36,7 @@ type Session struct {
 	SubsystemName       string     `json:"subsystem_name"`
 	RetroArchVersion    string     `json:"retroarch_version"`
 	Frontend            string     `json:"frontend"`
+	IPv6                string     `json:"ip6,omitempty" gorm:"size:45"`
 	IP                  net.IP     `json:"ip" gorm:"not null"`
 	Port                uint16     `json:"port"`
 	MitmHandle          string     `json:"-"`

@@ -35,6 +35,7 @@ type AddSessionRequest struct {
 	GameName            string `form:"game_name"`
 	GameCRC             string `form:"game_crc"`
 	Port                uint16 `form:"port"`
+	IPv6                string `form:"ip6"`
 	MITMServer          string `form:"mitm_server"`
 	HasPassword         bool   `form:"has_password"` // 1/0 (Can it be bound to bool?)
 	HasSpectatePassword bool   `form:"has_spectate_password"`
@@ -110,7 +111,7 @@ func (d *SessionDomain) Add(request *AddSessionRequest, ip net.IP) (*entity.Sess
 		session.IsRetroArch = savedSession.IsRetroArch
 		session.CreatedAt   = savedSession.CreatedAt
 		session.UpdatedAt   = savedSession.UpdatedAt
-		if savedSession.ContentHash != session.ContentHash {
+		if savedSession.ContentHash != session.ContentHash || savedSession.IPv6 != session.IPv6 {
 			requestType = SessionUpdate
 		} else {
 			requestType = SessionTouch
@@ -241,6 +242,15 @@ func (d *SessionDomain) parseSession(req *AddSessionRequest, ip net.IP) *entity.
 		spcnt = *req.SpectatorCount
 	}
 
+	// Metadata only: the lobby must not probe an arbitrary advertised address.
+	// Guests try it with a bounded timeout and validate the game handshake.
+	ipv6 := ""
+	if candidate := net.ParseIP(strings.TrimSpace(req.IPv6)); candidate != nil && candidate.To4() == nil {
+		if raw := candidate.To16(); raw != nil && raw[0]&0xe0 == 0x20 {
+			ipv6 = candidate.String()
+		}
+	}
+
 	return &entity.Session{
 		Username:            req.Username,
 		GameName:            req.GameName,
@@ -251,6 +261,7 @@ func (d *SessionDomain) parseSession(req *AddSessionRequest, ip net.IP) *entity.
 		RetroArchVersion:    req.RetroArchVersion,
 		Frontend:            req.Frontend,
 		IP:                  ip,
+		IPv6:                ipv6,
 		Port:                req.Port,
 		MitmHandle:          mitmHandle,
 		MitmAddress:         mitmAddress,
