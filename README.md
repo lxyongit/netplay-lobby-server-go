@@ -4,11 +4,26 @@ Netplay lobby server written in GO. Needs Go v1.13.
 
 ## Deployment
 
+已有 systemd 服务时，通过替换二进制并重启服务更新，不要再手动启动第二个进程，否则 55436 会出现 `address already in use`。本地源码变更不会自动更新远端服务。
+
 ```bash
 go build
 ./netplay-lobby-server-go
 
  systemctl restart netplay-lobby
+```
+
+
+```bash
+# 在服务器的源码目录中执行；先确认 ExecStart 指向这个目录的二进制。
+systemctl show netplay-lobby -p ExecStart --no-pager
+# 按需构建后，确认成功再执行替换与重启。
+go build -o netplay-lobby-server-go.new .
+cp -p netplay-lobby-server-go netplay-lobby-server-go.bak
+mv netplay-lobby-server-go.new netplay-lobby-server-go
+systemctl restart netplay-lobby
+systemctl status netplay-lobby --no-pager -l
+journalctl -u netplay-lobby -n 30 --no-pager
 ```
 
 ## Configuration
@@ -41,6 +56,16 @@ traversal:
 房主注册最长等待 60 秒、客户端等待 4 秒；注册读取、响应写入均有限时。服务限制 512 个并发连接、每来源 IP 32 个连接，异常断开会释放等待槽位。房间标识不写入日志。可通过 `NETPLAY-DEBUG traversal paired` 查看配对情况，实际直连是否成功以手机的 `traversal direct selected` 和 `route=direct` 为准。
 
 `relay` 配置仍指向 Python tunnel，例如 `nyc: "relay.example.com:55435"`；IPv6 字面量使用 `"[2001:db8::1]:55435"` 格式。协调服务不修改 RATS/RATL/RATA。两台手机需要同时更新应用和 LibretroDroid AAR。移动网络不一定支持 TCP 同时打开，双方也不一定都具备可互通 IPv6，因此中转后备仍然需要保留。
+
+## UDP / ICE 配套更新（2026-10-27）
+
+App 新增 libjuice IPv4/IPv6 ICE。`traversal/stun.go` 现接受带 SOFTWARE、FINGERPRINT 等可选属性的 STUN Binding 请求，修复旧实现只接受 20 字节空属性请求、导致 libjuice 无法发现 srflx 地址的问题。请求限定 512 字节并检查长度、属性边界和填充；来源限速和 IPv4/IPv6 XOR-MAPPED-ADDRESS 保留。这个无认证公共地址发现服务不处理 ICE 对端认证或 TURN 分配。
+
+**本次需要更新 Go 大厅，n2n supernode 不需要重装。** 继续开放超级节点 TCP/UDP 17777，另确保公网 UDP 55436 可直达 Go 进程。手机自动 n2n 房间的 STUN 默认地址是 `115.190.184.47:55436`。IPv6 全局 host 候选可由两端直接交换，不要求这个默认 IPv4 STUN 地址提供 IPv6 映射。
+
+更新后 `GET https://lobby.lxyong.com/traversal` 应包含 `udp_enabled: true` 和新增 `udp_binding_attributes: true`。旧版只有 `udp_enabled` 并不能证明兼容新 ICE 客户端。接口表示进程监听/功能状态，公网是否可达仍需结合两台手机的 `ice_gathering_done` / `ice_selected` 日志。
+
+本次未构建、测试、部署或更新远程服务。
 
 ## LICENSE
 
