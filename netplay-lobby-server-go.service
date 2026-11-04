@@ -3,7 +3,7 @@ Description=RetroArch lobby server
 After=network.target
 
 [Service]
-ExecStart=/home/lobby/netplay-lobby-server-go/netplay-lobby-server-go -v
+ExecStart=/root/netplay-lobby-server-go -v
 KillMode=process
 Restart=always
 RestartSec=5
