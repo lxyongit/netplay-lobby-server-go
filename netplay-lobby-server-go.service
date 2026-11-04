@@ -8,8 +8,8 @@ KillMode=process
 Restart=always
 RestartSec=5
 Type=simple
-User=lobby
-Group=lobby
+User=root
+Group=root
 
 [Install]
 WantedBy=multi-user.target
