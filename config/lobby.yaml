@@ -10,13 +10,13 @@ database:
   connection: ":memory:"
 
 relay:
-  nyc: "relay.lxyong.com:55435"
+  nyc: "relay.rwemulator.com:55435"
 
 # TCP 穿透协调服务：服务器防火墙/安全组需开放 55436，容器需发布此端口。
 # 域名应直接解析到运行本 Go 服务的服务器；55436 不经过 HTTP/CDN/TCP 反向代理。
 traversal:
   address: "[::]:55436"
-  advertisehost: "lobby.lxyong.com"
+  advertisehost: "lobby.rwemulator.com"
   publicport: 55436
 
 blacklist:
